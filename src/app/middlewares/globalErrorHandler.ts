@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ErrorRequestHandler } from 'express';
 import httpStatus from 'http-status';
 import config from '../config';
@@ -59,8 +61,6 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
       },
     ];
   } else if (err instanceof Error) {
-    console.log('Error', err);
-
     statusCode = httpStatus.BAD_REQUEST;
     message = err.message;
     errorSources = [
@@ -70,7 +70,6 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
       },
     ];
   }
-
   res.status(statusCode).json({
     success: false,
     message,

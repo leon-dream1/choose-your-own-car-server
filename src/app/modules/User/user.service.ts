@@ -1,11 +1,9 @@
 import { User } from './user.model';
 import httpStatus from 'http-status';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import config from '../../config';
 import { TUser } from './user.interface';
 import AppError from '../../errors/AppError';
-import crypto from 'crypto';
 import { sendEmail } from '../../utils/sendEmail';
 import { createToken, verifyToken } from '../../utils/token';
 import {
@@ -59,7 +57,11 @@ const loginUserToDB = async (
   const passwordMatched = await bcrypt.compare(password, user.password);
   if (!passwordMatched) throw new AppError(401, 'Invalid credentials!');
 
-  const payload = { email: user.email, role: user.role };
+  const payload = {
+    _id: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  };
 
   const accessToken = createToken(
     payload,

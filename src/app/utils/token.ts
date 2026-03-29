@@ -1,6 +1,7 @@
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
 export type TJwtPayload = JwtPayload & {
+  _id: string;
   email: string;
   role: string;
 };
