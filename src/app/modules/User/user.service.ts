@@ -4,12 +4,12 @@ import bcrypt from 'bcrypt';
 import config from '../../config';
 import { TUser } from './user.interface';
 import AppError from '../../errors/AppError';
-import { sendEmail } from '../../utils/sendEmail';
 import { createToken, verifyToken } from '../../utils/token';
 import {
   storeEmailVerificationToken,
   verifyStoredEmailVerificationToken,
 } from '../../redis/verifyEmail';
+import { addVerifyEmailJob } from '../../redis/emailJob';
 
 const saveUserToDB = async (userData: TUser) => {
   const isUserExists = await User.findOne({ email: userData?.email });
@@ -22,9 +22,10 @@ const saveUserToDB = async (userData: TUser) => {
   const token = await storeEmailVerificationToken(user.email);
 
   const link = `http://localhost:5000/api/auth/verify?email=${user.email}&token=${token}`;
-  await sendEmail(user.email, link);
 
-  return { message: 'A mail is sent to Verify your email !' };
+  await addVerifyEmailJob(user.email, link);
+
+  return { message: 'A verification email has been sent!' };
 };
 
 const verifyEmail = async (email: string, token: string) => {

@@ -2,6 +2,7 @@ import app from './app';
 import mongoose from 'mongoose';
 import config from './app/config';
 import redisClient from './app/config/redis.config';
+import './app/redis/emailWorker';
 
 async function server() {
   try {

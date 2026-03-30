@@ -5,7 +5,7 @@ import {
   deleteCacheByPattern,
   getCache,
   setCache,
-} from '../../utils/cache';
+} from '../../redis/cache';
 import { uploadMultipleToCloudinary } from '../../utils/uploadImageToCloudinary';
 import { TCar } from './car.interface';
 import { Car } from './car.model';

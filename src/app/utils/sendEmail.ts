@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
 
-export const sendEmail = async (to: string, link: string) => {
+export const sendEmail = async (to: string, subject: string, html: string) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -11,9 +11,9 @@ export const sendEmail = async (to: string, link: string) => {
   });
 
   await transporter.sendMail({
-    from: config.email_user,
+    from: `"Choose Your Own Car" <${process.env.EMAIL_USER}>`,
     to,
-    subject: 'Verify Email',
-    html: `<a href="${link}">Verify</a>`,
+    subject,
+    html,
   });
 };
