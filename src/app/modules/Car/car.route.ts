@@ -7,6 +7,8 @@ import { upload } from '../../middlewares/multer';
 
 const router = Router();
 
+router.get('/', carControllers.getAllApprovedCars);
+
 router.post(
   '/',
   upload.array('images', 5),

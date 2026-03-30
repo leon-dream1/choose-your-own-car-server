@@ -16,6 +16,16 @@ const createCar = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllApprovedCars = catchAsync(async (req: Request, res: Response) => {
+  const result = await carServices.getAllApprovedCars(req.query);
+
+  res.status(httpStatus.OK).json({
+    success: true,
+    message: 'Cars retrieved successfully',
+    data: result,
+  });
+});
+
 const updateCarStatus = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -53,6 +63,7 @@ const getMyCars = catchAsync(async (req: Request, res: Response) => {
 
 export const carControllers = {
   createCar,
+  getAllApprovedCars,
   updateCarStatus,
   deleteCar,
   getMyCars,
