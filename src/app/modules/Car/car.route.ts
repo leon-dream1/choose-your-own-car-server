@@ -7,6 +7,8 @@ import { upload } from '../../middlewares/multer';
 
 const router = Router();
 
+router.get('/my-cars', auth('seller'), carControllers.getMyCars);
+router.get('/:id', carControllers.getSingleCar);
 router.get('/', carControllers.getAllApprovedCars);
 
 router.post(
@@ -19,7 +21,5 @@ router.post(
 
 router.patch('/:id/status', auth('admin'), carControllers.updateCarStatus);
 router.delete('/:id', auth('seller', 'admin'), carControllers.deleteCar);
-
-router.get('/my-cars', auth('seller'), carControllers.getMyCars);
 
 export const carRoutes = router;

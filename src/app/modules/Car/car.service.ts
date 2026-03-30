@@ -1,4 +1,11 @@
 import AppError from '../../errors/AppError';
+import {
+  buildCacheKey,
+  CACHE_TTL,
+  deleteCacheByPattern,
+  getCache,
+  setCache,
+} from '../../utils/cache';
 import { uploadMultipleToCloudinary } from '../../utils/uploadImageToCloudinary';
 import { TCar } from './car.interface';
 import { Car } from './car.model';
@@ -21,10 +28,25 @@ const createCar = async (
     status: 'pending',
   });
 
+  await deleteCacheByPattern('cars:*');
+
   return car;
 };
 
 const getAllApprovedCars = async (query: Record<string, unknown>) => {
+  const cacheKey = buildCacheKey('cars', query);
+  const cached = await getCache<{
+    result: TCar[];
+    pagination: object;
+  }>(cacheKey);
+
+  if (cached) {
+    console.log('Cache hit:', cacheKey);
+    return cached;
+  }
+
+  console.log(' Cache miss:', cacheKey);
+
   const {
     brand,
     condition,
@@ -73,7 +95,7 @@ const getAllApprovedCars = async (query: Record<string, unknown>) => {
     Car.countDocuments(filter),
   ]);
 
-  return {
+  const result = {
     cars,
     pagination: {
       total,
@@ -82,6 +104,29 @@ const getAllApprovedCars = async (query: Record<string, unknown>) => {
       totalPages: Math.ceil(total / Number(limit)),
     },
   };
+
+  setCache(cacheKey, result, CACHE_TTL.CAR_LIST);
+
+  return result;
+};
+
+const getSingleCar = async (carId: string) => {
+  const cacheKey = `car:detail:${carId}`;
+
+  const cached = await getCache<TCar>(cacheKey);
+  if (cached) {
+    console.log('✓ Cache hit:', cacheKey);
+    return cached;
+  }
+  const car = await Car.findOne({ _id: carId, status: 'approved' })
+    .populate('seller', 'name email')
+    .lean();
+
+  if (!car) throw new AppError(404, 'Car not found');
+
+  await setCache(cacheKey, car, CACHE_TTL.CAR_DETAIL);
+
+  return car;
 };
 
 const updateCarStatus = async (
@@ -90,6 +135,9 @@ const updateCarStatus = async (
 ) => {
   const car = await Car.findByIdAndUpdate(carId, { status }, { new: true });
   if (!car) throw new AppError(404, 'Car not found');
+
+  await deleteCacheByPattern('cars:*');
+  await deleteCacheByPattern(`car:detail:${carId}`);
   return car;
 };
 
@@ -102,6 +150,10 @@ const deleteCar = async (carId: string, userId: string, role: string) => {
   }
 
   await Car.findByIdAndDelete(carId);
+
+  await deleteCacheByPattern('cars:*');
+  await deleteCacheByPattern(`car:detail:${carId}`);
+
   return { message: 'Car listing deleted' };
 };
 
@@ -115,6 +167,7 @@ const getMyCars = async (sellerId: string) => {
 export const carServices = {
   createCar,
   getAllApprovedCars,
+  getSingleCar,
   updateCarStatus,
   deleteCar,
   getMyCars,
