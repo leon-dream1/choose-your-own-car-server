@@ -38,7 +38,12 @@ router.post(
 router.get('/all-users', auth('admin'), userControllers.getAllUsers);
 
 router.patch('/block/:id', auth('admin', 'seller'), userControllers.blockUser);
-
+router.patch(
+  '/update-role/:id',
+  auth('admin'),
+  validateRequest(userValidationSchema.updateRoleValidationSchema),
+  userControllers.updateRole
+);
 router.delete('/delete/:id', auth('admin'), userControllers.deleteUser);
 
 router.post(

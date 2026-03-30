@@ -147,6 +147,31 @@ const blockUser = async (targetId: string, requesterId: string) => {
   return { message: `${target.name} has been blocked` };
 };
 
+const updateRole = async (
+  targetId: string,
+  requesterId: string,
+  newRole: 'user' | 'seller'
+) => {
+  if (targetId === requesterId) {
+    throw new AppError(400, 'You cannot change your own role');
+  }
+
+  const target = await User.findById(targetId);
+  if (!target) throw new AppError(404, 'User not found');
+
+  if (target.role === 'admin') {
+    throw new AppError(403, 'Cannot change admin role');
+  }
+  if (target.role === newRole) {
+    throw new AppError(400, `User is already a ${newRole}`);
+  }
+
+  target.role = newRole;
+  await target.save();
+
+  return { message: `${target.name} is now a ${newRole}` };
+};
+
 const deleteUser = async (targetId: string) => {
   const target = await User.findById(targetId);
   if (!target) throw new AppError(httpStatus.NOT_FOUND, 'User not found');
@@ -216,4 +241,5 @@ export const userServices = {
   deleteUser,
   resetPassword,
   forgotPassword,
+  updateRole,
 };

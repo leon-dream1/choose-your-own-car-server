@@ -112,6 +112,20 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateRole = catchAsync(async (req: Request, res: Response) => {
+  const targetId = req.params.id;
+  const requesterId = req.user!._id;
+  const { role } = req.body;
+
+  const result = await userServices.updateRole(targetId, requesterId, role);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const result = await userServices.deleteUser(req.params.id);
   res.status(200).json({
@@ -160,4 +174,5 @@ export const userControllers = {
   deleteUser,
   resetPassword,
   forgotPassword,
+  updateRole,
 };

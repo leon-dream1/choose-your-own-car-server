@@ -49,9 +49,16 @@ const resetPasswordValidationSchema = z.object({
   }),
 });
 
+const updateRoleValidationSchema = z.object({
+  body: z.object({
+    role: z.enum(['user', 'seller']),
+  }),
+});
+
 export const userValidationSchema = {
   userRegisterValidationSchema,
   userLoginValidationSchema,
   forgotPasswordValidationSchema,
   resetPasswordValidationSchema,
+  updateRoleValidationSchema,
 };
