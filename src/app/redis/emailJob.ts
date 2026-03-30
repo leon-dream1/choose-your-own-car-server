@@ -1,4 +1,7 @@
-import { verifyEmailTemplate } from '../utils/verifyEmailTemplate';
+import {
+  resetPasswordTemplate,
+  verifyEmailTemplate,
+} from '../utils/emailTemplate';
 import { emailQueue } from './emailQueue';
 
 export const addVerifyEmailJob = async (
@@ -18,4 +21,22 @@ export const addVerifyEmailJob = async (
   );
 
   console.log(`✓ Verify email job added for ${email}`);
+};
+
+export const addResetPasswordJob = async (
+  email: string,
+  resetLink: string
+): Promise<void> => {
+  await emailQueue.add(
+    'reset-password',
+    {
+      to: email,
+      subject: 'Choose Your Own Car — Password Reset',
+      html: resetPasswordTemplate(resetLink),
+    },
+    {
+      jobId: `reset-${email}-${Date.now()}`,
+    }
+  );
+  console.log(`✓ Reset password job added for ${email}`);
 };

@@ -121,6 +121,34 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const result = await userServices.forgotPassword(email);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email, token } = req.query as { email: string; token: string };
+  const { newPassword } = req.body;
+
+  if (!email || !token) {
+    throw new AppError(400, 'Email and token are required');
+  }
+
+  const result = await userServices.resetPassword(email, token, newPassword);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 export const userControllers = {
   registerUser,
   verifyEmail,
@@ -130,4 +158,6 @@ export const userControllers = {
   getAllUsers,
   blockUser,
   deleteUser,
+  resetPassword,
+  forgotPassword,
 };

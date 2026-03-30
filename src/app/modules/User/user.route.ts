@@ -3,7 +3,11 @@ import { userControllers } from './user.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import { userValidationSchema } from './user.validation';
 import auth from '../../middlewares/auth';
-import { loginLimiter, registerLimiter } from '../../middlewares/rateLimiter';
+import {
+  forgotPasswordLimiter,
+  loginLimiter,
+  registerLimiter,
+} from '../../middlewares/rateLimiter';
 
 const router = Router();
 
@@ -36,5 +40,18 @@ router.get('/all-users', auth('admin'), userControllers.getAllUsers);
 router.patch('/block/:id', auth('admin', 'seller'), userControllers.blockUser);
 
 router.delete('/delete/:id', auth('admin'), userControllers.deleteUser);
+
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  validateRequest(userValidationSchema.forgotPasswordValidationSchema),
+  userControllers.forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  validateRequest(userValidationSchema.resetPasswordValidationSchema),
+  userControllers.resetPassword
+);
 
 export const userRoutes = router;

@@ -7,9 +7,11 @@ import AppError from '../../errors/AppError';
 import { createToken, verifyToken } from '../../utils/token';
 import {
   storeEmailVerificationToken,
+  storeResetPasswordVerificationToken,
   verifyStoredEmailVerificationToken,
-} from '../../redis/verifyEmail';
-import { addVerifyEmailJob } from '../../redis/emailJob';
+  verifyStoreResetPasswordVerificationTokenn,
+} from '../../redis/verifyEmailAndResetPassword';
+import { addResetPasswordJob, addVerifyEmailJob } from '../../redis/emailJob';
 
 const saveUserToDB = async (userData: TUser) => {
   const isUserExists = await User.findOne({ email: userData?.email });
@@ -154,6 +156,55 @@ const deleteUser = async (targetId: string) => {
   await User.findByIdAndDelete(targetId);
   return { message: 'User deleted successfully' };
 };
+
+const forgotPassword = async (email: string) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return { message: 'If this email exists, a reset link has been sent.' };
+  }
+
+  if (user.isBlocked) {
+    throw new AppError(403, 'Your account is blocked!');
+  }
+
+  const token = await storeResetPasswordVerificationToken(email);
+
+  const resetLink = `http://localhost:3000/api/auth/reset-password?email=${email}&token=${token}`;
+
+  await addResetPasswordJob(email, resetLink);
+
+  return { message: 'If this email exists, a reset link has been sent.' };
+};
+
+const resetPassword = async (
+  email: string,
+  token: string,
+  newPassword: string
+) => {
+  const isValid = await verifyStoreResetPasswordVerificationTokenn(
+    email,
+    token
+  );
+
+  if (!isValid) {
+    throw new AppError(
+      400,
+      'Invalid or expired reset link. Please request again.'
+    );
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) throw new AppError(404, 'User not found');
+
+  user.password = newPassword;
+  user.sessions = [];
+
+  await user.save();
+
+  return { message: 'Password reset successfully! Please login again.' };
+};
+
 export const userServices = {
   saveUserToDB,
   verifyEmail,
@@ -163,4 +214,6 @@ export const userServices = {
   getAllUsers,
   blockUser,
   deleteUser,
+  resetPassword,
+  forgotPassword,
 };

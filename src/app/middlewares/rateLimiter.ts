@@ -16,6 +16,12 @@ export const loginRateLimit = new Ratelimit({
   prefix: 'ratelimit:login',
 });
 
+export const forgetPasswordRateLimit = new Ratelimit({
+  redis: redisClient,
+  limiter: Ratelimit.slidingWindow(3, '15 m'),
+  prefix: 'ratelimit:forget-password',
+});
+
 export const registerLimiter = async (
   req: Request,
   res: Response,
@@ -54,6 +60,34 @@ export const loginLimiter = async (
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
 
     const { success, limit, remaining, reset } = await loginRateLimit.limit(ip);
+
+    res.setHeader('X-RateLimit-Limit', limit);
+    res.setHeader('X-RateLimit-Remaining', remaining);
+    res.setHeader('X-RateLimit-Reset', reset);
+
+    if (!success) {
+      throw new AppError(
+        429,
+        'Too many login attempts! Please wait 15 minutes.'
+      );
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const forgotPasswordLimiter = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
+    const { success, limit, remaining, reset } =
+      await forgetPasswordRateLimit.limit(ip);
 
     res.setHeader('X-RateLimit-Limit', limit);
     res.setHeader('X-RateLimit-Remaining', remaining);
