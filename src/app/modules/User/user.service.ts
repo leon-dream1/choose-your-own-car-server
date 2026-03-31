@@ -78,7 +78,6 @@ const loginUserToDB = async (
     config.jwt_refresh_expires_in!
   );
 
-  // Session save করো — এই device-এর জন্য
   user.sessions.push({ refreshToken, deviceInfo, createdAt: new Date() });
   await user.save();
 
@@ -100,7 +99,11 @@ const refreshAccessToken = async (refreshToken: string) => {
   if (!sessionExists)
     throw new AppError(401, 'Session expired, please login again');
 
-  const payload = { email: user.email, role: user.role };
+  const payload = {
+    _id: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  };
   const accessToken = createToken(
     payload,
     config.jwt_access_secret as string,

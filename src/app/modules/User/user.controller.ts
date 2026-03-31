@@ -42,7 +42,6 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     deviceInfo
   );
 
-  // Refresh token → httpOnly cookie
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
@@ -78,7 +77,6 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 
   await userServices.logoutUser(refreshToken);
 
-  // Cookie মুছে দাও
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -103,7 +101,7 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
 
 const blockUser = catchAsync(async (req: Request, res: Response) => {
   const targetId = req.params.id;
-  const requesterId = req.user?.email;
+  const requesterId = req.user?._id;
   const result = await userServices.blockUser(targetId, requesterId!);
   res.status(200).json({
     success: true,
@@ -114,7 +112,7 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
 
 const updateRole = catchAsync(async (req: Request, res: Response) => {
   const targetId = req.params.id;
-  const requesterId = req.user!._id;
+  const requesterId = req.user?._id;
   const { role } = req.body;
 
   const result = await userServices.updateRole(targetId, requesterId, role);
