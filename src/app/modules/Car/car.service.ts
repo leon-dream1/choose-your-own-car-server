@@ -153,9 +153,9 @@ const deleteCar = async (carId: string, userId: string, role: string) => {
   }
 
   if (car.images && car.images.length > 0) {
-    car.images.map((imageUrl) => {
-      deleteFromCloudinary(imageUrl);
-    });
+    await Promise.all(
+      car.images.map((imageUrl) => deleteFromCloudinary(imageUrl))
+    );
   }
 
   await Car.findByIdAndDelete(carId);
