@@ -1,4 +1,3 @@
-import cloudinary from '../../config/cloudinary.config';
 import AppError from '../../errors/AppError';
 import {
   buildCacheKey,
@@ -7,7 +6,10 @@ import {
   getCache,
   setCache,
 } from '../../redis/cache';
-import { uploadMultipleToCloudinary } from '../../utils/uploadImageToCloudinary';
+import {
+  deleteFromCloudinary,
+  uploadMultipleToCloudinary,
+} from '../../utils/uploadImageToCloudinary';
 import { TCar } from './car.interface';
 import { Car } from './car.model';
 
@@ -151,13 +153,9 @@ const deleteCar = async (carId: string, userId: string, role: string) => {
   }
 
   if (car.images && car.images.length > 0) {
-    const deletePromises = car.images.map((imageUrl) => {
-      const publicId = imageUrl.split('/').slice(-3).join('/').split('.')[0];
-
-      return cloudinary.uploader.destroy(publicId);
+    car.images.map((imageUrl) => {
+      deleteFromCloudinary(imageUrl);
     });
-
-    await Promise.all(deletePromises);
   }
 
   await Car.findByIdAndDelete(carId);

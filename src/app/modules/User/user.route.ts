@@ -11,6 +11,8 @@ import {
 
 const router = Router();
 
+router.get('/all-users', auth('admin'), userControllers.getAllUsers);
+
 router.post(
   '/register',
   registerLimiter,
@@ -34,8 +36,6 @@ router.post(
   auth('user', 'seller', 'admin'),
   userControllers.logoutUser
 );
-
-router.get('/all-users', auth('admin'), userControllers.getAllUsers);
 
 router.patch('/block/:id', auth('admin', 'seller'), userControllers.blockUser);
 router.patch(

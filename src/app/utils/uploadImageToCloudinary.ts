@@ -38,3 +38,17 @@ export const uploadMultipleToCloudinary = async (
 
   return results.map((result) => result.secure_url);
 };
+
+export const deleteFromCloudinary = async (imageUrl: string): Promise<void> => {
+  const publicId = imageUrl.split('/').slice(-3).join('/').split('.')[0];
+
+  await cloudinary.uploader.destroy(publicId);
+};
+
+export const deleteMultipleFromCloudinary = async (
+  imageUrls: string[]
+): Promise<void> => {
+  if (!imageUrls || imageUrls.length === 0) return;
+
+  await Promise.all(imageUrls.map((url) => deleteFromCloudinary(url)));
+};
