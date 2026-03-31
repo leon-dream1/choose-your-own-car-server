@@ -1,3 +1,4 @@
+import cloudinary from '../../config/cloudinary.config';
 import AppError from '../../errors/AppError';
 import {
   buildCacheKey,
@@ -149,12 +150,22 @@ const deleteCar = async (carId: string, userId: string, role: string) => {
     throw new AppError(403, 'You can only delete your own listings');
   }
 
+  if (car.images && car.images.length > 0) {
+    const deletePromises = car.images.map((imageUrl) => {
+      const publicId = imageUrl.split('/').slice(-3).join('/').split('.')[0];
+
+      return cloudinary.uploader.destroy(publicId);
+    });
+
+    await Promise.all(deletePromises);
+  }
+
   await Car.findByIdAndDelete(carId);
 
   await deleteCacheByPattern('cars:*');
   await deleteCacheByPattern(`car:detail:${carId}`);
 
-  return { message: 'Car listing deleted' };
+  return { message: 'Car and images deleted successfully' };
 };
 
 const getMyCars = async (sellerId: string) => {
