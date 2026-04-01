@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Chat Pro</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+    .container { max-width: 600px; margin: auto; background: white; width: 100%; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden; margin-top: 20px; }
+    .header { background: #0084ff; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+    .setup-area { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 8px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; outline: none; }
+    input:focus { border-color: #0084ff; }
+    
+    #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; background: #ffffff; }
+    .msg { max-width: 75%; padding: 10px 15px; border-radius: 18px; font-size: 14px; line-height: 1.5; position: relative; word-wrap: break-word; }
+    .sent { align-self: flex-end; background: #0084ff; color: white; border-bottom-right-radius: 4px; box-shadow: 0 2px 5px rgba(0,132,255,0.2); }
+    .received { align-self: flex-start; background: #e4e6eb; color: #050505; border-bottom-left-radius: 4px; }
+    
+    .msg-info { font-size: 11px; margin-bottom: 4px; font-weight: bold; opacity: 0.8; }
+    .sent .msg-info { text-align: right; }
+
+    #typing-status { padding: 5px 20px; font-size: 12px; color: #65676b; height: 20px; background: white; }
+    .input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; background: white; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+    .btn-connect { background: #28a745; color: white; flex: 1; }
+    .btn-connect:hover { background: #218838; }
+    .btn-send { background: #0084ff; color: white; }
+    .btn-send:hover { background: #0073e6; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">Car Direct - Realtime Chat</div>
+  
+  <div class="setup-area">
+    <input id="token" type="password" placeholder="আপনার Access Token এখানে দিন" />
+    <input id="convId" placeholder="Conversation ID এখানে দিন" />
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-connect" onclick="connect()">Connect</button>
+      <button style="background:#dc3545; color:white" onclick="disconnect()">Disconnect</button>
+    </div>
+    <span id="status" style="text-align: center; font-size: 12px; font-weight: bold; color: #dc3545;">● Offline</span>
+  </div>
+
+  <div id="messages"></div>
+  <div id="typing-status"></div>
+
+  <div class="input-area">
+    <input id="msgInput" placeholder="একটি মেসেজ লিখুন..." onkeypress="handleKeyPress(event)" disabled />
+    <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled>Send</button>
+  </div>
+</div>
+
+<script>
+  let socket = null;
+  let currentConvId = '';
+  let currentUserId = '';
+
+  // টোকেন থেকে ইউজার আইডি বের করার ফাংশন
+  function decodeToken(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(window.atob(base64))._id;
+    } catch (e) {
+      console.error("Token decode error:", e);
+      return null;
+    }
+  }
+
+  function logMessage(name, text, type) {
+    const messagesDiv = document.getElementById('messages');
+    const msgElement = document.createElement('div');
+    msgElement.className = `msg ${type}`;
+    msgElement.innerHTML = `
+      <div class="msg-info">${name}</div>
+      <div>${text}</div>
+    `;
+    messagesDiv.appendChild(msgElement);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function connect() {
+    const tokenInput = document.getElementById('token').value.trim();
+    const convInput = document.getElementById('convId').value.trim();
+
+    if (!tokenInput || !convInput) return alert('Token এবং Conversation ID দিন!');
+
+    currentConvId = convInput;
+    currentUserId = decodeToken(tokenInput);
+
+    // সকেট ইনিশিয়ালাইজেশন
+    socket = io('http://localhost:5000', {
+      auth: { token: tokenInput }
+    });
+
+    socket.on('connect', () => {
+      document.getElementById('status').style.color = '#28a745';
+      document.getElementById('status').textContent = '● Online (Connected)';
+      document.getElementById('msgInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+      document.getElementById('messages').innerHTML = '<center style="color:#aaa; font-size:11px; margin-bottom:10px;">End-to-end encrypted connection established</center>';
+      
+      // রুম জয়েন করা
+      socket.emit('join:conversation', currentConvId);
+      console.log("Successfully joined room:", currentConvId);
+    });
+
+    // মেসেজ রিসিভ করা
+    socket.on('receive:message', (data) => {
+      console.log("New message data:", data);
+      // যদি মেসেজটি অন্য কেউ পাঠায় তবেই স্ক্রিনে দেখাবো
+      if (data.message.sender._id !== currentUserId) {
+        logMessage(data.message.sender.name, data.message.content, 'received');
+      }
+    });
+
+    // টাইপিং ইন্ডিকেটর
+    socket.on('typing:start', (data) => {
+      document.getElementById('typing-status').textContent = `${data.name} টাইপ করছে...`;
+    });
+
+    socket.on('typing:stop', () => {
+      document.getElementById('typing-status').textContent = '';
+    });
+
+    socket.on('error', (err) => {
+      alert("Socket Error: " + err.message);
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('status').style.color = '#dc3545';
+      document.getElementById('status').textContent = '● Offline';
+      document.getElementById('msgInput').disabled = true;
+      document.getElementById('sendBtn').disabled = true;
+    });
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    
+    if (!content || !socket) return;
+
+    // সার্ভারে মেসেজ পাঠানো
+    socket.emit('send:message', { 
+      conversationId: currentConvId, 
+      content: content 
+    });
+
+    // নিজের স্ক্রিনে সাথে সাথে দেখানো
+    logMessage('You', content, 'sent');
+    input.value = '';
+    socket.emit('typing:stop', currentConvId);
+  }
+
+  function handleKeyPress(e) {
+    if (e.key === 'Enter') sendMessage();
+  }
+
+  function disconnect() {
+    if (socket) socket.disconnect();
+  }
+
+  // টাইপিং ইভেন্ট হ্যান্ডলার
+  let typingTimer;
+  document.getElementById('msgInput').addEventListener('input', () => {
+    if (socket) {
+      socket.emit('typing:start', currentConvId);
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        socket.emit('typing:stop', currentConvId);
+      }, 2000);
+    }
+  });
+</script>
+
+</body>
+</html>

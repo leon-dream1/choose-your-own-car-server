@@ -4,6 +4,7 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import { userRoutes } from './app/modules/User/user.route';
 import cookieParser from 'cookie-parser';
 import { carRoutes } from './app/modules/Car/car.route';
+import { conversationRoutes } from './app/modules/Conversation/conversation.route';
 
 const app: Application = express();
 
@@ -20,6 +21,7 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use('/api/auth', userRoutes);
 app.use('/api/cars', carRoutes);
+app.use('/api/conversations', conversationRoutes);
 
 app.use(globalErrorHandler);
 // app.use(notFound);
