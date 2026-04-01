@@ -27,6 +27,7 @@ const createCar = async (
   const car = await Car.create({
     ...carData,
     seller: sellerId,
+    coverImage: imageUrls[0],
     images: imageUrls,
     status: 'pending',
   });

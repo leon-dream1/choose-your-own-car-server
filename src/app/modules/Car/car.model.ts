@@ -37,6 +37,9 @@ const carSchema = new Schema<TCar>(
       type: String,
       maxlength: [2000, 'Description too long'],
     },
+    coverImage: {
+      type: String,
+    },
     images: [{ type: String }],
     location: { type: String, required: true },
     status: {

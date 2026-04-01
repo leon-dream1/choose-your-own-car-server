@@ -11,6 +11,7 @@ export type TCar = {
   mileage: number;
   condition: TCarCondition;
   description: string;
+  coverImage: string;
   images: string[];
   location: string;
   status: TCarStatus;
