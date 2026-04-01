@@ -13,13 +13,20 @@ router.get('/', carControllers.getAllApprovedCars);
 
 router.post(
   '/',
-  upload.array('images', 5),
   auth('seller'),
   validateRequest(carValidation.createCarValidation),
+  upload.array('images', 5),
   carControllers.createCar
 );
 
 router.patch('/:id/status', auth('admin'), carControllers.updateCarStatus);
+router.patch(
+  '/:id',
+  auth('seller'),
+  validateRequest(carValidation.updateCarValidation),
+  upload.array('images', 5),
+  carControllers.updateCar
+);
 router.delete('/:id', auth('seller', 'admin'), carControllers.deleteCar);
 
 export const carRoutes = router;

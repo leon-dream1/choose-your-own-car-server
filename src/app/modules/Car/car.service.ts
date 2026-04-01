@@ -8,6 +8,7 @@ import {
 } from '../../redis/cache';
 import {
   deleteFromCloudinary,
+  deleteMultipleFromCloudinary,
   uploadMultipleToCloudinary,
 } from '../../utils/uploadImageToCloudinary';
 import { TCar } from './car.interface';
@@ -43,7 +44,6 @@ const getAllApprovedCars = async (query: Record<string, unknown>) => {
     result: TCar[];
     pagination: object;
   }>(cacheKey);
-
   if (cached) {
     console.log('Cache hit:', cacheKey);
     return cached;
@@ -174,6 +174,63 @@ const getMyCars = async (sellerId: string) => {
   return cars;
 };
 
+const updateCar = async (
+  carId: string,
+  sellerId: string,
+  updateData: Partial<TCar>,
+  newFiles: Express.Multer.File[],
+  keepImages: string[]
+) => {
+  const car = await Car.findById(carId);
+  if (!car) throw new AppError(404, 'Car not found');
+
+  if (car.seller.toString() !== sellerId) {
+    throw new AppError(403, 'You can only edit your own listings');
+  }
+
+  const imagesToDelete = car.images.filter((img) => !keepImages.includes(img));
+
+  if (imagesToDelete.length > 0) {
+    await deleteMultipleFromCloudinary(imagesToDelete);
+    console.log(`✓ Deleted ${imagesToDelete.length} old images`);
+  }
+
+  let newImageUrls: string[] = [];
+  if (newFiles && newFiles.length > 0) {
+    newImageUrls = await uploadMultipleToCloudinary(
+      newFiles,
+      `cars/${sellerId}`
+    );
+    console.log(`✓ Uploaded ${newImageUrls.length} new images`);
+  }
+
+  const finalImages = [...keepImages, ...newImageUrls];
+
+  if (finalImages.length === 0) {
+    throw new AppError(400, 'Car must have at least 1 image');
+  }
+
+  if (finalImages.length > 5) {
+    throw new AppError(400, 'Maximum 5 images allowed');
+  }
+
+  const updatedCar = await Car.findByIdAndUpdate(
+    carId,
+    {
+      ...updateData,
+      images: finalImages,
+      coverImage: finalImages[0],
+      status: 'pending',
+    },
+    { new: true, runValidators: true }
+  );
+
+  await deleteCacheByPattern('cars:*');
+  await deleteCacheByPattern(`car:detail:${carId}`);
+
+  return updatedCar;
+};
+
 export const carServices = {
   createCar,
   getAllApprovedCars,
@@ -181,4 +238,5 @@ export const carServices = {
   updateCarStatus,
   deleteCar,
   getMyCars,
+  updateCar,
 };

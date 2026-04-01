@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import httpStatus from 'http-status';
 import { carServices } from './car.service';
+import AppError from '../../errors/AppError';
 
 const createCar = catchAsync(async (req: Request, res: Response) => {
   const sellerId = req.user!._id;
@@ -70,6 +71,36 @@ const getMyCars = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateCar = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const sellerId = req.user!._id;
+
+  const newFiles = (req.files as Express.Multer.File[]) || [];
+
+  let keepImages: string[] = [];
+  if (req.body.keepImages) {
+    try {
+      keepImages = JSON.parse(req.body.keepImages);
+    } catch {
+      throw new AppError(400, 'keepImages must be a valid JSON array');
+    }
+  }
+
+  const result = await carServices.updateCar(
+    id,
+    sellerId,
+    req.body,
+    newFiles,
+    keepImages
+  );
+
+  res.status(200).json({
+    success: true,
+    message: 'Car updated successfully! Waiting for re-approval.',
+    data: result,
+  });
+});
+
 export const carControllers = {
   createCar,
   getAllApprovedCars,
@@ -77,4 +108,5 @@ export const carControllers = {
   deleteCar,
   getMyCars,
   getSingleCar,
+  updateCar,
 };
