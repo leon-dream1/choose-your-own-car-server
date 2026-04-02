@@ -1,0 +1,21 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.carRoutes = void 0;
+const express_1 = require("express");
+const auth_1 = __importDefault(require("../../middlewares/auth"));
+const validateRequest_1 = __importDefault(require("../../middlewares/validateRequest"));
+const car_controller_1 = require("./car.controller");
+const car_validation_1 = require("./car.validation");
+const multer_1 = require("../../middlewares/multer");
+const router = (0, express_1.Router)();
+router.get('/my-cars', (0, auth_1.default)('seller'), car_controller_1.carControllers.getMyCars);
+router.get('/:id', car_controller_1.carControllers.getSingleCar);
+router.get('/', car_controller_1.carControllers.getAllApprovedCars);
+router.post('/', (0, auth_1.default)('seller'), (0, validateRequest_1.default)(car_validation_1.carValidation.createCarValidation), multer_1.upload.array('images', 5), car_controller_1.carControllers.createCar);
+router.patch('/:id/status', (0, auth_1.default)('admin'), car_controller_1.carControllers.updateCarStatus);
+router.patch('/:id', (0, auth_1.default)('seller'), (0, validateRequest_1.default)(car_validation_1.carValidation.updateCarValidation), multer_1.upload.array('images', 5), car_controller_1.carControllers.updateCar);
+router.delete('/:id', (0, auth_1.default)('seller', 'admin'), car_controller_1.carControllers.deleteCar);
+exports.carRoutes = router;
