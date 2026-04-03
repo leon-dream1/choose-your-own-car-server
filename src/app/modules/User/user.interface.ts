@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { TRole, TSession } from './user.constant';
 
 export type TUser = {
@@ -9,4 +10,6 @@ export type TUser = {
 
   isVerified: boolean;
   sessions: TSession[];
+
+  wishlist: Types.ObjectId[];
 };

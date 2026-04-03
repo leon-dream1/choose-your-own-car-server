@@ -59,4 +59,16 @@ router.post(
   userControllers.resetPassword
 );
 
+// wish list routes
+router.post(
+  '/wishlist/:carId',
+  auth('user', 'seller'),
+  userControllers.toggleWishlist
+);
+router.get(
+  '/wishlist',
+  auth('user', 'seller', 'admin'),
+  userControllers.getMyWishlist
+);
+
 export const userRoutes = router;

@@ -12,6 +12,7 @@ import {
   verifyStoreResetPasswordVerificationTokenn,
 } from '../../redis/verifyEmailAndResetPassword';
 import { addResetPasswordJob, addVerifyEmailJob } from '../../redis/emailJob';
+import { Car } from '../Car/car.model';
 
 const saveUserToDB = async (userData: TUser) => {
   const isUserExists = await User.findOne({ email: userData?.email });
@@ -234,6 +235,46 @@ const resetPassword = async (
   return { message: 'Password reset successfully! Please login again.' };
 };
 
+const toggleWishlist = async (userId: string, carId: string) => {
+  const user = await User.findById(userId);
+  if (!user) throw new AppError(404, 'User not found');
+
+  const car = await Car.findById(carId);
+  if (!car) throw new AppError(404, 'Car not found');
+  if (car.status !== 'approved') {
+    throw new AppError(400, 'Car is not available');
+  }
+
+  const isInWishlist = user.wishlist.map((id) => id.toString()).includes(carId);
+
+  if (isInWishlist) {
+    await User.findByIdAndUpdate(userId, {
+      $pull: { wishlist: carId },
+    });
+    return { message: 'Removed from wishlist', isWishlisted: false };
+  } else {
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { wishlist: carId },
+    });
+    return { message: 'Added to wishlist', isWishlisted: true };
+  }
+};
+
+const getMyWishlist = async (userId: string) => {
+  const user = await User.findById(userId)
+    .populate({
+      path: 'wishlist',
+      match: { status: 'approved' },
+      select: 'title brand model year price coverImage location condition',
+    })
+    .select('wishlist')
+    .lean();
+
+  if (!user) throw new AppError(404, 'User not found');
+
+  return user.wishlist;
+};
+
 export const userServices = {
   saveUserToDB,
   verifyEmail,
@@ -246,4 +287,6 @@ export const userServices = {
   resetPassword,
   forgotPassword,
   updateRole,
+  getMyWishlist,
+  toggleWishlist,
 };

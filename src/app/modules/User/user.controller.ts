@@ -161,6 +161,25 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const toggleWishlist = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.toggleWishlist(
+    req.user!._id,
+    req.params.carId
+  );
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: { isWishlisted: result.isWishlisted },
+  });
+});
+
+const getMyWishlist = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.getMyWishlist(req.user!._id);
+  res
+    .status(200)
+    .json({ success: true, message: 'Wishlist retrieved', data: result });
+});
+
 export const userControllers = {
   registerUser,
   verifyEmail,
@@ -173,4 +192,6 @@ export const userControllers = {
   resetPassword,
   forgotPassword,
   updateRole,
+  toggleWishlist,
+  getMyWishlist,
 };

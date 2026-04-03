@@ -39,6 +39,14 @@ export const userSchema = new Schema<TUser>(
 
     isVerified: { type: Boolean, default: false },
     sessions: [sessionSchema],
+
+    wishlist: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Car',
+        default: [],
+      },
+    ],
   },
   {
     timestamps: true,
