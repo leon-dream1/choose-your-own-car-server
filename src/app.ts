@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { carRoutes } from './app/modules/Car/car.route';
 import { conversationRoutes } from './app/modules/Conversation/conversation.route';
 import compression from 'compression';
+import { orderRoutes } from './app/modules/Order/order.route';
 
 const app: Application = express();
 
@@ -24,6 +25,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/auth', userRoutes);
 app.use('/api/cars', carRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.use(globalErrorHandler);
 // app.use(notFound);

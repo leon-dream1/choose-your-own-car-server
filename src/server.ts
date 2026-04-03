@@ -13,7 +13,11 @@ async function server() {
     const value = await redisClient.get('test');
     console.log('✓ Redis test:', value);
 
-    await mongoose.connect(config.database_url as string);
+    await mongoose.connect(config.database_url as string, {
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+    });
 
     const httpServer = http.createServer(app);
     initSocket(httpServer);
