@@ -76,7 +76,6 @@ const getAllApprovedCars = async (query: Record<string, unknown>) => {
     filter.price = priceFilter;
   }
 
-  // Text search — title বা description-এ খোঁজো
   if (search) {
     filter.$or = [
       { title: { $regex: search, $options: 'i' } }, // case insensitive
