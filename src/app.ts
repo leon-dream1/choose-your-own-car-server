@@ -5,6 +5,7 @@ import { userRoutes } from './app/modules/User/user.route';
 import cookieParser from 'cookie-parser';
 import { carRoutes } from './app/modules/Car/car.route';
 import { conversationRoutes } from './app/modules/Conversation/conversation.route';
+import compression from 'compression';
 
 const app: Application = express();
 
@@ -13,6 +14,7 @@ app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+app.use(compression());
 
 // root api
 app.get('/', (req: Request, res: Response) => {
