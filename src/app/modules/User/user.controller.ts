@@ -91,7 +91,7 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const result = await userServices.getAllUsers();
+  const result = await userServices.getAllUsers(req.query);
   res.status(httpStatus.OK).json({
     success: true,
     message: 'Users retrieved successfully',
@@ -99,14 +99,26 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const blockUser = catchAsync(async (req: Request, res: Response) => {
-  const targetId = req.params.id;
-  const requesterId = req.user?._id;
-  const result = await userServices.blockUser(targetId, requesterId!);
+// const blockUser = catchAsync(async (req: Request, res: Response) => {
+//   const targetId = req.params.id;
+//   const requesterId = req.user?._id;
+//   const result = await userServices.blockUser(targetId, requesterId!);
+//   res.status(200).json({
+//     success: true,
+//     message: result.message,
+//     data: null,
+//   });
+// });
+
+const toggleBlockUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.toggleBlockUser(
+    req.params.id,
+    req.user!._id
+  );
   res.status(200).json({
     success: true,
     message: result.message,
-    data: null,
+    data: { isBlocked: result.isBlocked },
   });
 });
 
@@ -180,6 +192,20 @@ const getMyWishlist = catchAsync(async (req: Request, res: Response) => {
     .json({ success: true, message: 'Wishlist retrieved', data: result });
 });
 
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const result = await userServices.getMe(req.user!._id);
+  res
+    .status(200)
+    .json({ success: true, message: 'Profile retrieved', data: result });
+});
+
+// const updateMe = catchAsync(async (req: Request, res: Response) => {
+//   const result = await userServices.updateMe(req.user!._id, req.body);
+//   res
+//     .status(200)
+//     .json({ success: true, message: 'Profile updated', data: result });
+// });
+
 export const userControllers = {
   registerUser,
   verifyEmail,
@@ -187,11 +213,14 @@ export const userControllers = {
   refreshToken,
   logoutUser,
   getAllUsers,
-  blockUser,
+  // blockUser,
+  toggleBlockUser,
   deleteUser,
   resetPassword,
   forgotPassword,
   updateRole,
   toggleWishlist,
   getMyWishlist,
+  getMe,
+  // updateMe,
 };

@@ -101,6 +101,29 @@ const updateCar = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const toggleFeatured = catchAsync(async (req: Request, res: Response) => {
+  const result = await carServices.toggleFeatured(req.params.id);
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: { isFeatured: result.isFeatured },
+  });
+});
+
+const getFeaturedCars = catchAsync(async (req: Request, res: Response) => {
+  const result = await carServices.getFeaturedCars();
+  res
+    .status(200)
+    .json({ success: true, message: 'Featured cars retrieved', data: result });
+});
+
+const getPendingCars = catchAsync(async (req: Request, res: Response) => {
+  const result = await carServices.getPendingCars(req.query);
+  res
+    .status(200)
+    .json({ success: true, message: 'Pending cars retrieved', data: result });
+});
+
 export const carControllers = {
   createCar,
   getAllApprovedCars,
@@ -109,4 +132,7 @@ export const carControllers = {
   getMyCars,
   getSingleCar,
   updateCar,
+  toggleFeatured,
+  getFeaturedCars,
+  getPendingCars,
 };

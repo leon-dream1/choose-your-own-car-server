@@ -11,7 +11,14 @@ import {
 
 const router = Router();
 
-router.get('/all-users', auth('admin'), userControllers.getAllUsers);
+router.get(
+  '/wishlist',
+  auth('user', 'seller', 'admin'),
+  userControllers.getMyWishlist
+);
+router.get('/me', auth('user', 'seller', 'admin'), userControllers.getMe);
+// router.patch('/me', auth('user', 'seller', 'admin'), userControllers.updateMe);
+router.get('/users', auth('admin'), userControllers.getAllUsers);
 
 router.post(
   '/register',
@@ -19,8 +26,19 @@ router.post(
   validateRequest(userValidationSchema.userRegisterValidationSchema),
   userControllers.registerUser
 );
-
 router.get('/verify', userControllers.verifyEmail);
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  validateRequest(userValidationSchema.forgotPasswordValidationSchema),
+  userControllers.forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  validateRequest(userValidationSchema.resetPasswordValidationSchema),
+  userControllers.resetPassword
+);
 
 router.post(
   '/login',
@@ -36,39 +54,31 @@ router.post(
   auth('user', 'seller', 'admin'),
   userControllers.logoutUser
 );
-
-router.patch('/block/:id', auth('admin', 'seller'), userControllers.blockUser);
-router.patch(
-  '/update-role/:id',
-  auth('admin'),
-  validateRequest(userValidationSchema.updateRoleValidationSchema),
-  userControllers.updateRole
-);
-router.delete('/delete/:id', auth('admin'), userControllers.deleteUser);
-
-router.post(
-  '/forgot-password',
-  forgotPasswordLimiter,
-  validateRequest(userValidationSchema.forgotPasswordValidationSchema),
-  userControllers.forgotPassword
-);
-
-router.post(
-  '/reset-password',
-  validateRequest(userValidationSchema.resetPasswordValidationSchema),
-  userControllers.resetPassword
-);
-
 // wish list routes
 router.post(
   '/wishlist/:carId',
   auth('user', 'seller'),
   userControllers.toggleWishlist
 );
-router.get(
-  '/wishlist',
-  auth('user', 'seller', 'admin'),
-  userControllers.getMyWishlist
+
+// router.patch(
+//   '/users/:id/block',
+//   auth('admin', 'seller'),
+//   userControllers.blockUser
+// );
+
+// block unblock by admin, seller cant block or unblock anyone, admin can block or unblock anyone except himself
+router.patch(
+  '/users/:id/block',
+  auth('admin'),
+  userControllers.toggleBlockUser
 );
+router.patch(
+  '/users/:id/role',
+  auth('admin'),
+  validateRequest(userValidationSchema.updateRoleValidationSchema),
+  userControllers.updateRole
+);
+router.delete('/users/:id/delete', auth('admin'), userControllers.deleteUser);
 
 export const userRoutes = router;

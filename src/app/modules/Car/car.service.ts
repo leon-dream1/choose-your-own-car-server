@@ -230,6 +230,71 @@ const updateCar = async (
   return updatedCar;
 };
 
+const toggleFeatured = async (carId: string) => {
+  const car = await Car.findById(carId);
+  if (!car) throw new AppError(404, 'Car not found');
+  if (car.status !== 'approved') {
+    throw new AppError(400, 'Only approved cars can be featured');
+  }
+
+  car.isFeatured = !car.isFeatured;
+  await car.save();
+
+  // Cache invalidate করো
+  await deleteCacheByPattern('cars:*');
+  await deleteCacheByPattern(`car:detail:${carId}`);
+
+  return {
+    message: car.isFeatured
+      ? 'Car marked as featured'
+      : 'Car removed from featured',
+    isFeatured: car.isFeatured,
+  };
+};
+
+const getFeaturedCars = async () => {
+  const cacheKey = 'cars:featured';
+  const cached = await getCache<TCar[]>(cacheKey);
+  if (cached) return cached;
+
+  const cars = await Car.find({ status: 'approved', isFeatured: true })
+    .populate('seller', 'name email')
+    .select(
+      'title brand model year price coverImage location condition isFeatured'
+    )
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .lean();
+
+  await setCache(cacheKey, cars, CACHE_TTL.CAR_LIST);
+  return cars;
+};
+
+const getPendingCars = async (query: Record<string, unknown>) => {
+  const { page = 1, limit = 10 } = query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [cars, total] = await Promise.all([
+    Car.find({ status: 'pending' })
+      .populate('seller', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    Car.countDocuments({ status: 'pending' }),
+  ]);
+
+  return {
+    cars,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Number(limit)),
+    },
+  };
+};
+
 export const carServices = {
   createCar,
   getAllApprovedCars,
@@ -238,4 +303,7 @@ export const carServices = {
   deleteCar,
   getMyCars,
   updateCar,
+  toggleFeatured,
+  getFeaturedCars,
+  getPendingCars,
 };

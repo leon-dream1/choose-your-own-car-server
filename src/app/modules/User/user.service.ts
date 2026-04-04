@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { User } from './user.model';
 import httpStatus from 'http-status';
 import bcrypt from 'bcrypt';
@@ -127,29 +128,68 @@ const logoutUser = async (refreshToken: string) => {
   return { message: 'Logged out successfully' };
 };
 
-const getAllUsers = async () => {
-  const users = await User.find({ role: { $ne: 'admin' } })
-    .select('-password -sessions -verificationToken')
-    .lean();
-  return users;
+const getAllUsers = async (query: Record<string, unknown>) => {
+  const { page = 1, limit = 10 } = query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [users, total] = await Promise.all([
+    User.find({ role: { $ne: 'admin' } })
+      .select('-password -sessions')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    User.countDocuments({ role: { $ne: 'admin' } }),
+  ]);
+  return {
+    users,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Number(limit)),
+    },
+  };
 };
 
-const blockUser = async (targetId: string, requesterId: string) => {
+// const blockUser = async (targetId: string, requesterId: string) => {
+//   if (targetId === requesterId) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'You cannot block yourself');
+//   }
+
+//   const target = await User.findById(targetId);
+//   if (!target) throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+
+//   if (target.role === 'admin') {
+//     throw new AppError(httpStatus.FORBIDDEN, 'Cannot block an admin');
+//   }
+
+//   target.isBlocked = true;
+//   await target.save();
+
+//   return { message: `${target.name} has been blocked` };
+// };
+
+const toggleBlockUser = async (targetId: string, requesterId: string) => {
   if (targetId === requesterId) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'You cannot block yourself');
+    throw new AppError(400, 'You cannot block yourself');
   }
 
   const target = await User.findById(targetId);
-  if (!target) throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-
+  if (!target) throw new AppError(404, 'User not found');
   if (target.role === 'admin') {
-    throw new AppError(httpStatus.FORBIDDEN, 'Cannot block an admin');
+    throw new AppError(403, 'Cannot block an admin');
   }
 
-  target.isBlocked = true;
+  target.isBlocked = !target.isBlocked; // toggle
   await target.save();
 
-  return { message: `${target.name} has been blocked` };
+  return {
+    message: target.isBlocked
+      ? `${target.name} has been blocked`
+      : `${target.name} has been unblocked`,
+    isBlocked: target.isBlocked,
+  };
 };
 
 const updateRole = async (
@@ -275,6 +315,25 @@ const getMyWishlist = async (userId: string) => {
   return user.wishlist;
 };
 
+const getMe = async (userId: string) => {
+  const user = await User.findById(userId).select('-password -sessions').lean();
+  if (!user) throw new AppError(404, 'User not found');
+  return user;
+};
+
+// const updateMe = async (userId: string, updateData: Partial<TUser>) => {
+//   const notAllowed = ['role', 'isBlocked', 'isVerified', 'password', 'email'];
+//   notAllowed.forEach((field) => delete (updateData as any)[field]);
+
+//   const user = await User.findByIdAndUpdate(userId, updateData, {
+//     new: true,
+//     runValidators: true,
+//   }).select('-password -sessions');
+
+//   if (!user) throw new AppError(404, 'User not found');
+//   return user;
+// };
+
 export const userServices = {
   saveUserToDB,
   verifyEmail,
@@ -282,11 +341,14 @@ export const userServices = {
   refreshAccessToken,
   logoutUser,
   getAllUsers,
-  blockUser,
+  // blockUser,
+  toggleBlockUser,
   deleteUser,
   resetPassword,
   forgotPassword,
   updateRole,
   getMyWishlist,
   toggleWishlist,
+  getMe,
+  // updateMe,
 };
