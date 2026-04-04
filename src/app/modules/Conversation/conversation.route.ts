@@ -12,11 +12,10 @@ router.post(
   validateRequest(conversationValidation.startConversationSchema),
   conversationControllers.startConversation
 );
-
 router.get(
-  '/:id/messages',
+  '/unread-count',
   auth('user', 'seller'),
-  conversationControllers.getMessages
+  conversationControllers.getUnreadCount
 );
 
 router.get(
@@ -26,9 +25,21 @@ router.get(
 );
 
 router.get(
-  '/unread-count',
+  '/:id/messages',
   auth('user', 'seller'),
-  conversationControllers.getUnreadCount
+  conversationControllers.getMessages
 );
+
+router.delete(
+  '/:id',
+  auth('user', 'seller'),
+  conversationControllers.deleteConversation
+);
+
+// router.patch(
+//   '/:id/messages/read',
+//   auth('user', 'seller'),
+//   conversationControllers.markAllAsRead
+// );
 
 export const conversationRoutes = router;

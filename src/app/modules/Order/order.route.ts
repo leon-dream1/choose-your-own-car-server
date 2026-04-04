@@ -10,6 +10,14 @@ router.post('/payment/success', orderControllers.paymentSuccess);
 router.post('/payment/fail', orderControllers.paymentFail);
 router.post('/payment/cancel', orderControllers.paymentCancel);
 
+router.get('/admin/all', auth('admin'), orderControllers.getAllOrdersAdmin);
+
+router.get(
+  '/payment/verify/:transactionId',
+  auth('user', 'seller'),
+  orderControllers.verifyPayment
+);
+
 router.post(
   '/',
   auth('user', 'seller'),

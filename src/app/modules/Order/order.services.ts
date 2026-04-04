@@ -183,8 +183,8 @@ const initiatePayment = async (orderId: string, buyerId: string) => {
     throw new AppError(500, 'Payment initialization failed');
   }
 
-  order.transactionId = transactionId;
-  await order.save();
+  // order.transactionId = transactionId;
+  // await order.save();
 
   return { paymentUrl: response.GatewayPageURL };
 };
@@ -226,6 +226,48 @@ const paymentSuccess = async (transactionId: string, orderId: string) => {
   return { message: 'Payment successful' };
 };
 
+const verifyPayment = async (transactionId: string, userId: string) => {
+  const order = await Order.findOne({ transactionId })
+    .populate('car', 'title coverImage price')
+    .populate('buyer', 'name email')
+    .populate('seller', 'name email');
+
+  if (!order) throw new AppError(404, 'Transaction not found');
+
+  if (order.buyer._id.toString() !== userId) {
+    throw new AppError(403, 'Not authorized');
+  }
+
+  return order;
+};
+
+const getAllOrdersAdmin = async (query: Record<string, unknown>) => {
+  const { page = 1, limit = 10 } = query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [orders, total] = await Promise.all([
+    Order.find()
+      .populate('car', 'title coverImage price')
+      .populate('buyer', 'name email')
+      .populate('seller', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    Order.countDocuments(),
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Number(limit)),
+    },
+  };
+};
+
 export const orderServices = {
   createOrder,
   getMyOrders,
@@ -234,4 +276,6 @@ export const orderServices = {
   respondToOrder,
   initiatePayment,
   paymentSuccess,
+  getAllOrdersAdmin,
+  verifyPayment,
 };

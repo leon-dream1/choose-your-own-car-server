@@ -144,10 +144,45 @@ const getUnreadCount = async (userId: string) => {
   return { unreadCount: totalUnread };
 };
 
+const deleteConversation = async (conversationId: string, userId: string) => {
+  const conversation = await Conversation.findById(conversationId);
+  if (!conversation) throw new AppError(404, 'Conversation not found');
+
+  const isParticipant =
+    conversation.buyer.toString() === userId ||
+    conversation.seller.toString() === userId;
+
+  if (!isParticipant) throw new AppError(403, 'Not authorized');
+
+  await Conversation.findByIdAndDelete(conversationId);
+  return { message: 'Conversation deleted' };
+};
+// const markAllAsRead = async (conversationId: string, userId: string) => {
+//   const conversation = await Conversation.findById(conversationId);
+//   if (!conversation) throw new AppError(404, 'Conversation not found');
+
+//   const isParticipant =
+//     conversation.buyer.toString() === userId ||
+//     conversation.seller.toString() === userId;
+
+//   if (!isParticipant) throw new AppError(403, 'Not authorized');
+
+//   conversation.messages.forEach((msg) => {
+//     if (msg.sender.toString() !== userId) {
+//       msg.isRead = true;
+//     }
+//   });
+
+//   await conversation.save();
+//   return { message: 'All messages marked as read' };
+// };
+
 export const conversationServices = {
   getOrCreateConversation,
   saveMessage,
   getMyConversations,
   getConversationMessages,
   getUnreadCount,
+  deleteConversation,
+  // markAllAsRead,
 };

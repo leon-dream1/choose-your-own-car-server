@@ -85,6 +85,16 @@ const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
   res.redirect(`${process.env.CLIENT_URL}/payment/success?orderId=${orderId}`);
 });
 
+const verifyPayment = catchAsync(async (req: Request, res: Response) => {
+  const result = await orderServices.verifyPayment(
+    req.params.transactionId,
+    req.user!._id
+  );
+  res
+    .status(200)
+    .json({ success: true, message: 'Payment verified', data: result });
+});
+
 // Payment fail হলে
 const paymentFail = catchAsync(async (req: Request, res: Response) => {
   const { orderId } = req.query as { orderId: string };
@@ -94,6 +104,13 @@ const paymentFail = catchAsync(async (req: Request, res: Response) => {
 const paymentCancel = catchAsync(async (req: Request, res: Response) => {
   const { orderId } = req.query as { orderId: string };
   res.redirect(`${process.env.CLIENT_URL}/payment/cancel?orderId=${orderId}`);
+});
+
+const getAllOrdersAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await orderServices.getAllOrdersAdmin(req.query);
+  res
+    .status(200)
+    .json({ success: true, message: 'All orders retrieved', data: result });
 });
 
 export const orderControllers = {
@@ -106,4 +123,6 @@ export const orderControllers = {
   paymentSuccess,
   paymentFail,
   paymentCancel,
+  getAllOrdersAdmin,
+  verifyPayment,
 };
