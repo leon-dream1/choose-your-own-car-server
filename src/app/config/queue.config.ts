@@ -5,6 +5,9 @@ export const redisConnection: ConnectionOptions = {
   host: config.UPSTASH_REDIS_HOST!,
   port: 6379,
   password: config.UPSTASH_REDIS_REST_TOKEN,
-  tls: {},
+  tls: {
+    rejectUnauthorized: false,
+  },
+
   maxRetriesPerRequest: null,
 };
