@@ -85,22 +85,29 @@ const logoutUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
     });
 }));
 const getAllUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.userServices.getAllUsers();
+    const result = yield user_service_1.userServices.getAllUsers(req.query);
     res.status(http_status_1.default.OK).json({
         success: true,
         message: 'Users retrieved successfully',
         data: result,
     });
 }));
-const blockUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const targetId = req.params.id;
-    const requesterId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
-    const result = yield user_service_1.userServices.blockUser(targetId, requesterId);
+// const blockUser = catchAsync(async (req: Request, res: Response) => {
+//   const targetId = req.params.id;
+//   const requesterId = req.user?._id;
+//   const result = await userServices.blockUser(targetId, requesterId!);
+//   res.status(200).json({
+//     success: true,
+//     message: result.message,
+//     data: null,
+//   });
+// });
+const toggleBlockUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.userServices.toggleBlockUser(req.params.id, req.user._id);
     res.status(200).json({
         success: true,
         message: result.message,
-        data: null,
+        data: { isBlocked: result.isBlocked },
     });
 }));
 const updateRole = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -145,6 +152,32 @@ const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
         data: null,
     });
 }));
+const toggleWishlist = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.userServices.toggleWishlist(req.user._id, req.params.carId);
+    res.status(200).json({
+        success: true,
+        message: result.message,
+        data: { isWishlisted: result.isWishlisted },
+    });
+}));
+const getMyWishlist = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.userServices.getMyWishlist(req.user._id);
+    res
+        .status(200)
+        .json({ success: true, message: 'Wishlist retrieved', data: result });
+}));
+const getMe = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield user_service_1.userServices.getMe(req.user._id);
+    res
+        .status(200)
+        .json({ success: true, message: 'Profile retrieved', data: result });
+}));
+// const updateMe = catchAsync(async (req: Request, res: Response) => {
+//   const result = await userServices.updateMe(req.user!._id, req.body);
+//   res
+//     .status(200)
+//     .json({ success: true, message: 'Profile updated', data: result });
+// });
 exports.userControllers = {
     registerUser,
     verifyEmail,
@@ -152,9 +185,14 @@ exports.userControllers = {
     refreshToken,
     logoutUser,
     getAllUsers,
-    blockUser,
+    // blockUser,
+    toggleBlockUser,
     deleteUser,
     resetPassword,
     forgotPassword,
     updateRole,
+    toggleWishlist,
+    getMyWishlist,
+    getMe,
+    // updateMe,
 };

@@ -27,4 +27,8 @@ exports.default = {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     client_url: process.env.CLIENT_URL,
+    server_url: process.env.SERVER_URL,
+    SSLCOMMERZ_IS_LIVE: process.env.SSLCOMMERZ_IS_LIVE,
+    SSLCOMMERZ_STORE_ID: process.env.SSLCOMMERZ_STORE_ID,
+    SSLCOMMERZ_STORE_PASSWORD: process.env.SSLCOMMERZ_STORE_PASSWORD,
 };

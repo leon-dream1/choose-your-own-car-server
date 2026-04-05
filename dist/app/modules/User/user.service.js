@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userServices = void 0;
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const user_model_1 = require("./user.model");
 const http_status_1 = __importDefault(require("http-status"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -21,6 +22,7 @@ const AppError_1 = __importDefault(require("../../errors/AppError"));
 const token_1 = require("../../utils/token");
 const verifyEmailAndResetPassword_1 = require("../../redis/verifyEmailAndResetPassword");
 const emailJob_1 = require("../../redis/emailJob");
+const car_model_1 = require("../Car/car.model");
 const saveUserToDB = (userData) => __awaiter(void 0, void 0, void 0, function* () {
     const isUserExists = yield user_model_1.User.findOne({ email: userData === null || userData === void 0 ? void 0 : userData.email });
     if (isUserExists) {
@@ -87,25 +89,59 @@ const logoutUser = (refreshToken) => __awaiter(void 0, void 0, void 0, function*
         throw new AppError_1.default(400, 'Session not found');
     return { message: 'Logged out successfully' };
 });
-const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
-    const users = yield user_model_1.User.find({ role: { $ne: 'admin' } })
-        .select('-password -sessions -verificationToken')
-        .lean();
-    return users;
+const getAllUsers = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page = 1, limit = 10 } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const [users, total] = yield Promise.all([
+        user_model_1.User.find({ role: { $ne: 'admin' } })
+            .select('-password -sessions')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
+            .lean(),
+        user_model_1.User.countDocuments({ role: { $ne: 'admin' } }),
+    ]);
+    return {
+        users,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / Number(limit)),
+        },
+    };
 });
-const blockUser = (targetId, requesterId) => __awaiter(void 0, void 0, void 0, function* () {
+// const blockUser = async (targetId: string, requesterId: string) => {
+//   if (targetId === requesterId) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'You cannot block yourself');
+//   }
+//   const target = await User.findById(targetId);
+//   if (!target) throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+//   if (target.role === 'admin') {
+//     throw new AppError(httpStatus.FORBIDDEN, 'Cannot block an admin');
+//   }
+//   target.isBlocked = true;
+//   await target.save();
+//   return { message: `${target.name} has been blocked` };
+// };
+const toggleBlockUser = (targetId, requesterId) => __awaiter(void 0, void 0, void 0, function* () {
     if (targetId === requesterId) {
-        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, 'You cannot block yourself');
+        throw new AppError_1.default(400, 'You cannot block yourself');
     }
     const target = yield user_model_1.User.findById(targetId);
     if (!target)
-        throw new AppError_1.default(http_status_1.default.NOT_FOUND, 'User not found');
+        throw new AppError_1.default(404, 'User not found');
     if (target.role === 'admin') {
-        throw new AppError_1.default(http_status_1.default.FORBIDDEN, 'Cannot block an admin');
+        throw new AppError_1.default(403, 'Cannot block an admin');
     }
-    target.isBlocked = true;
+    target.isBlocked = !target.isBlocked; // toggle
     yield target.save();
-    return { message: `${target.name} has been blocked` };
+    return {
+        message: target.isBlocked
+            ? `${target.name} has been blocked`
+            : `${target.name} has been unblocked`,
+        isBlocked: target.isBlocked,
+    };
 });
 const updateRole = (targetId, requesterId, newRole) => __awaiter(void 0, void 0, void 0, function* () {
     if (targetId === requesterId) {
@@ -159,6 +195,59 @@ const resetPassword = (email, token, newPassword) => __awaiter(void 0, void 0, v
     yield user.save();
     return { message: 'Password reset successfully! Please login again.' };
 });
+const toggleWishlist = (userId, carId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield user_model_1.User.findById(userId);
+    if (!user)
+        throw new AppError_1.default(404, 'User not found');
+    const car = yield car_model_1.Car.findById(carId);
+    if (!car)
+        throw new AppError_1.default(404, 'Car not found');
+    if (car.status !== 'approved') {
+        throw new AppError_1.default(400, 'Car is not available');
+    }
+    const isInWishlist = user.wishlist.map((id) => id.toString()).includes(carId);
+    if (isInWishlist) {
+        yield user_model_1.User.findByIdAndUpdate(userId, {
+            $pull: { wishlist: carId },
+        });
+        return { message: 'Removed from wishlist', isWishlisted: false };
+    }
+    else {
+        yield user_model_1.User.findByIdAndUpdate(userId, {
+            $addToSet: { wishlist: carId },
+        });
+        return { message: 'Added to wishlist', isWishlisted: true };
+    }
+});
+const getMyWishlist = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield user_model_1.User.findById(userId)
+        .populate({
+        path: 'wishlist',
+        match: { status: 'approved' },
+        select: 'title brand model year price coverImage location condition',
+    })
+        .select('wishlist')
+        .lean();
+    if (!user)
+        throw new AppError_1.default(404, 'User not found');
+    return user.wishlist;
+});
+const getMe = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield user_model_1.User.findById(userId).select('-password -sessions').lean();
+    if (!user)
+        throw new AppError_1.default(404, 'User not found');
+    return user;
+});
+// const updateMe = async (userId: string, updateData: Partial<TUser>) => {
+//   const notAllowed = ['role', 'isBlocked', 'isVerified', 'password', 'email'];
+//   notAllowed.forEach((field) => delete (updateData as any)[field]);
+//   const user = await User.findByIdAndUpdate(userId, updateData, {
+//     new: true,
+//     runValidators: true,
+//   }).select('-password -sessions');
+//   if (!user) throw new AppError(404, 'User not found');
+//   return user;
+// };
 exports.userServices = {
     saveUserToDB,
     verifyEmail,
@@ -166,9 +255,14 @@ exports.userServices = {
     refreshAccessToken,
     logoutUser,
     getAllUsers,
-    blockUser,
+    // blockUser,
+    toggleBlockUser,
     deleteUser,
     resetPassword,
     forgotPassword,
     updateRole,
+    getMyWishlist,
+    toggleWishlist,
+    getMe,
+    // updateMe,
 };

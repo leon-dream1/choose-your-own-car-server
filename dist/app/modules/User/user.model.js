@@ -50,6 +50,13 @@ exports.userSchema = new mongoose_1.Schema({
     },
     isVerified: { type: Boolean, default: false },
     sessions: [user_constant_1.sessionSchema],
+    wishlist: [
+        {
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'Car',
+            default: [],
+        },
+    ],
 }, {
     timestamps: true,
 });

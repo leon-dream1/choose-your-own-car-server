@@ -49,9 +49,22 @@ const getUnreadCount = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         data: result,
     });
 }));
+const deleteConversation = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield conversation_service_1.conversationServices.deleteConversation(req.params.id, req.user._id);
+    res.status(200).json({ success: true, message: result.message, data: null });
+}));
+// const markAllAsRead = catchAsync(async (req: Request, res: Response) => {
+//   const result = await conversationServices.markAllAsRead(
+//     req.params.id,
+//     req.user!._id
+//   );
+//   res.status(200).json({ success: true, message: result.message, data: null });
+// });
 exports.conversationControllers = {
     startConversation,
     getMyConversations,
     getMessages,
     getUnreadCount,
+    deleteConversation,
+    // markAllAsRead,
 };

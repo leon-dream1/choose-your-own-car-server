@@ -91,6 +91,26 @@ const updateCar = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void
         data: result,
     });
 }));
+const toggleFeatured = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_service_1.carServices.toggleFeatured(req.params.id);
+    res.status(200).json({
+        success: true,
+        message: result.message,
+        data: { isFeatured: result.isFeatured },
+    });
+}));
+const getFeaturedCars = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_service_1.carServices.getFeaturedCars();
+    res
+        .status(200)
+        .json({ success: true, message: 'Featured cars retrieved', data: result });
+}));
+const getPendingCars = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield car_service_1.carServices.getPendingCars(req.query);
+    res
+        .status(200)
+        .json({ success: true, message: 'Pending cars retrieved', data: result });
+}));
 exports.carControllers = {
     createCar,
     getAllApprovedCars,
@@ -99,4 +119,7 @@ exports.carControllers = {
     getMyCars,
     getSingleCar,
     updateCar,
+    toggleFeatured,
+    getFeaturedCars,
+    getPendingCars,
 };

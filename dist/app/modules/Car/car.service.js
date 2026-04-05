@@ -49,7 +49,6 @@ const getAllApprovedCars = (query) => __awaiter(void 0, void 0, void 0, function
             priceFilter.$lte = Number(maxPrice);
         filter.price = priceFilter;
     }
-    // Text search — title বা description-এ খোঁজো
     if (search) {
         filter.$or = [
             { title: { $regex: search, $options: 'i' } }, // case insensitive
@@ -154,6 +153,61 @@ const updateCar = (carId, sellerId, updateData, newFiles, keepImages) => __await
     yield (0, cache_1.deleteCacheByPattern)(`car:detail:${carId}`);
     return updatedCar;
 });
+const toggleFeatured = (carId) => __awaiter(void 0, void 0, void 0, function* () {
+    const car = yield car_model_1.Car.findById(carId);
+    if (!car)
+        throw new AppError_1.default(404, 'Car not found');
+    if (car.status !== 'approved') {
+        throw new AppError_1.default(400, 'Only approved cars can be featured');
+    }
+    car.isFeatured = !car.isFeatured;
+    yield car.save();
+    // Cache invalidate করো
+    yield (0, cache_1.deleteCacheByPattern)('cars:*');
+    yield (0, cache_1.deleteCacheByPattern)(`car:detail:${carId}`);
+    return {
+        message: car.isFeatured
+            ? 'Car marked as featured'
+            : 'Car removed from featured',
+        isFeatured: car.isFeatured,
+    };
+});
+const getFeaturedCars = () => __awaiter(void 0, void 0, void 0, function* () {
+    const cacheKey = 'cars:featured';
+    const cached = yield (0, cache_1.getCache)(cacheKey);
+    if (cached)
+        return cached;
+    const cars = yield car_model_1.Car.find({ status: 'approved', isFeatured: true })
+        .populate('seller', 'name email')
+        .select('title brand model year price coverImage location condition isFeatured')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
+    yield (0, cache_1.setCache)(cacheKey, cars, cache_1.CACHE_TTL.CAR_LIST);
+    return cars;
+});
+const getPendingCars = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page = 1, limit = 10 } = query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const [cars, total] = yield Promise.all([
+        car_model_1.Car.find({ status: 'pending' })
+            .populate('seller', 'name email')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit))
+            .lean(),
+        car_model_1.Car.countDocuments({ status: 'pending' }),
+    ]);
+    return {
+        cars,
+        pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(total / Number(limit)),
+        },
+    };
+});
 exports.carServices = {
     createCar,
     getAllApprovedCars,
@@ -162,4 +216,7 @@ exports.carServices = {
     deleteCar,
     getMyCars,
     updateCar,
+    toggleFeatured,
+    getFeaturedCars,
+    getPendingCars,
 };
