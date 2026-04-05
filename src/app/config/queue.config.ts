@@ -3,7 +3,8 @@ import config from '.';
 
 export const redisConnection: ConnectionOptions = {
   host: config.UPSTASH_REDIS_HOST!,
-  port: Number(config.UPSTASH_REDIS_PORT),
+  port: 6379,
   password: config.UPSTASH_REDIS_REST_TOKEN,
   tls: {},
+  maxRetriesPerRequest: null,
 };
