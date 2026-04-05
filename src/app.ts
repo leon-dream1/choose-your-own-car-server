@@ -7,14 +7,14 @@ import { carRoutes } from './app/modules/Car/car.route';
 import { conversationRoutes } from './app/modules/Conversation/conversation.route';
 import compression from 'compression';
 import { orderRoutes } from './app/modules/Order/order.route';
-import helmet from 'helmet';
+// import helmet from 'helmet';
 import config from './app/config';
 
 const app: Application = express();
 
 //parser
 app.set('trust proxy', 1);
-app.use(helmet());
+// app.use(helmet());
 app.use(
   cors({
     origin: config.client_url,
