@@ -98,6 +98,8 @@ const getAllApprovedCars = async (query: Record<string, unknown>) => {
     Car.countDocuments(filter),
   ]);
 
+  console.log(cars);
+
   const result = {
     cars,
     pagination: {
