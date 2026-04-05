@@ -13,15 +13,12 @@ const conversation_route_1 = require("./app/modules/Conversation/conversation.ro
 const compression_1 = __importDefault(require("compression"));
 const order_route_1 = require("./app/modules/Order/order.route");
 const helmet_1 = __importDefault(require("helmet"));
-const config_1 = __importDefault(require("./app/config"));
+// import config from './app/config';
 const app = (0, express_1.default)();
 //parser
 app.set('trust proxy', 1);
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({
-    origin: config_1.default.client_url,
-    credentials: true,
-}));
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
 app.use((0, compression_1.default)());

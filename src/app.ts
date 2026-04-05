@@ -8,19 +8,14 @@ import { conversationRoutes } from './app/modules/Conversation/conversation.rout
 import compression from 'compression';
 import { orderRoutes } from './app/modules/Order/order.route';
 import helmet from 'helmet';
-import config from './app/config';
+// import config from './app/config';
 
 const app: Application = express();
 
 //parser
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(
-  cors({
-    origin: config.client_url,
-    credentials: true,
-  })
-);
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(compression());
