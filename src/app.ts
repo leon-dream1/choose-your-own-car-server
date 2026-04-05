@@ -27,7 +27,7 @@ app.use(compression());
 
 // root api
 app.get('/', (req: Request, res: Response) => {
-  res.send('Hello from Car Shop!!!!!');
+  res.send('Car Shop Server is running..............!');
 });
 
 app.use('/api/auth', userRoutes);
